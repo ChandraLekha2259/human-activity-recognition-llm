@@ -1,101 +1,241 @@
 import ollama
+import os
+import time
 
 
 def analyze_activity_sequence(activity_sequence, subject_id):
 
-    # Convert sequence into readable text
+    # =========================================
+    # CONVERT SEQUENCE INTO READABLE TEXT
+    # =========================================
+
     sequence_text = " → ".join(activity_sequence)
 
-    # Count occurrences in the compressed sequence
+
+    # =========================================
+    # COUNT ACTIVITIES
+    # =========================================
+
     activity_counts = {}
 
     for activity in activity_sequence:
-        activity_counts[activity] = activity_counts.get(activity, 0) + 1
+
+        activity_counts[activity] = (
+            activity_counts.get(activity, 0) + 1
+        )
+
 
     counts_text = "\n".join(
         f"- {activity}: {count}"
         for activity, count in activity_counts.items()
     )
 
+
+    # =========================================
+    # CALCULATE UNIQUE TRANSITIONS
+    # =========================================
+
+    transitions = []
+
+    seen_transitions = set()
+
+
+    for i in range(len(activity_sequence) - 1):
+
+        source = activity_sequence[i]
+
+        destination = activity_sequence[i + 1]
+
+
+        # Ignore identical consecutive activities
+
+        if source == destination:
+            continue
+
+
+        transition = (
+            source,
+            destination
+        )
+
+
+        # Store each transition only once
+
+        if transition not in seen_transitions:
+
+            seen_transitions.add(
+                transition
+            )
+
+            transitions.append(
+                f"{source} → {destination}"
+            )
+
+
+    transitions_text = "\n".join(
+        f"- {transition}"
+        for transition in transitions
+    )
+
+
+    # =========================================
+    # LLM PROMPT
+    # =========================================
+
     prompt = f"""
-You are analyzing predictions produced by a Human Activity Recognition
+You are analyzing predictions from a Human Activity Recognition
 machine learning model.
 
 Subject ID: {subject_id}
 
 Predicted activity sequence:
+
 {sequence_text}
 
-Activity counts:
-{counts_text}
-
-Provide exactly these three sections:
-
-1. Main Activities Detected
-2. Important Transitions
-3. Overall Activity Pattern
+Your task is to describe ONLY the overall observable pattern
+in this sequence.
 
 STRICT RULES:
 
-- Use the exact activity names provided in the input.
+- Use only activity names that appear in the sequence.
+- Use the exact activity names.
 - Do not replace activity names with synonyms.
 - Do not invent activities.
-- Do not infer the person's location.
-- Do not infer the person's intentions.
+- Do not infer location.
+- Do not infer intentions.
 - Do not infer medical or physical conditions.
-- Do not infer whether the person needed assistance.
-- Do not describe an activity as "climbing" unless that exact term
-  is present in the input.
-- Do not use terms such as "sedentary", "ambulatory",
-  "mobility assistance", "exercise", or "rest" unless explicitly
-  present in the input.
-- Do not infer what happened between two consecutive predictions.
-- Describe only patterns directly observable from the sequence.
-- For transitions, use the exact activity names.
-
-TRANSITION RULES:
-
-- A transition means two DIFFERENT consecutive activities.
-- Never report a transition where the source and destination are identical.
-- Do NOT report transitions such as:
-  STANDING → STANDING
-  SITTING → SITTING
-  WALKING → WALKING
-  or any other activity → the same activity.
-- Report each unique transition only once.
-- Use the exact format:
-  ACTIVITY_A → ACTIVITY_B
-
-IMPORTANT ABOUT COUNTS:
-
-- The activity counts represent occurrences in the compressed sequence.
-- They do NOT represent time spent performing an activity.
-- Do not use phrases such as:
-  "spends more time",
-  "spends equal time",
-  "duration",
-  "for a long period",
-  or "proportion of time".
-- You may say that an activity occurs more or fewer times only when
-  supported by the provided activity counts.
-
-OVERALL PATTERN:
-
+- Do not infer what happened between activities.
+- Do not describe duration or time spent.
+- Do not use words such as:
+  "exercise",
+  "rest",
+  "sedentary",
+  "ambulatory",
+  "climbing",
+  "assistance"
+  unless those exact words are present in the activity sequence.
 - Describe only patterns directly visible in the sequence.
-- Do not claim that an activity lasts for a particular amount of time.
-- Do not make assumptions about the person's real-world situation.
+- Do not list the activities separately.
+- Do not list transitions.
+- Do not provide headings.
+- Do not provide bullet points.
 
-Keep the response concise and suitable for a college project report.
+Write exactly 2 or 3 concise sentences describing
+the overall observable activity pattern.
+
+Sequence:
+
+{sequence_text}
 """
 
+
+    # =========================================
+    # CALL OLLAMA
+    # =========================================
+
+    print(
+        "\nSENDING ACTIVITY SEQUENCE TO LLM"
+    )
+
+    start_time = time.time()
+
+
     response = ollama.chat(
+
         model="llama3.2:3b",
+
         messages=[
+
             {
                 "role": "user",
                 "content": prompt
             }
-        ]
+
+        ],
+
+        options={
+
+            "temperature": 0,
+
+            "num_predict": 80
+
+        }
+
     )
 
-    return response["message"]["content"]
+
+    elapsed_time = (
+        time.time() - start_time
+    )
+
+
+    print(
+        f"LLM RESPONSE RECEIVED IN "
+        f"{elapsed_time:.2f} SECONDS"
+    )
+
+
+    llm_pattern = (
+        response["message"]["content"]
+        .strip()
+    )
+
+
+    # =========================================
+    # DISPLAY LLM RESULT
+    # =========================================
+
+    print("\nLLM RESULT:")
+
+    print(llm_pattern)
+
+
+    # =========================================
+    # BUILD FINAL INTERPRETATION
+    # =========================================
+
+    final_result = (
+        "1. Main Activities Detected\n\n"
+        + counts_text
+        + "\n\n\n"
+        + "2. Important Transitions\n\n"
+        + transitions_text
+        + "\n\n\n"
+        + "3. Overall Activity Pattern\n\n"
+        + llm_pattern
+    )
+
+
+    # =========================================
+    # SAVE INTERPRETATION
+    # =========================================
+
+    base_dir = os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+
+
+    output_file = os.path.join(
+        base_dir,
+        "llm_interpretation.txt"
+    )
+
+
+    with open(
+        output_file,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        file.write(
+            final_result
+        )
+
+
+    # =========================================
+    # RETURN FINAL RESULT
+    # =========================================
+
+    return final_result

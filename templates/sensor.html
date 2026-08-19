@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Live Human Activity Recognition</title>
+
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 15px;
+        }
+
+        #startButton {
+            background: #22c55e;
+            color: white;
+        }
+
+        #startButton:hover {
+            background: #16a34a;
+        }
+
+        #startButton:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+
+        .sensor-box {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1f2937;
+            border-radius: 15px;
+        }
+
+        .value {
+            font-size: 20px;
+            margin: 10px;
+        }
+
+        .status {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            background: #374151;
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .counter {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+
+        .debug {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #030712;
+            border-radius: 10px;
+            text-align: left;
+            font-family: monospace;
+            word-break: break-word;
+        }
+
+        .dashboard-value {
+            font-size: 22px;
+            margin: 15px;
+        }
+
+        .activity-sequence {
+            background: #030712;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            line-height: 2;
+            word-break: break-word;
+        }
+
+        .llm-status {
+            margin-bottom: 15px;
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .llm-result {
+            background: #030712;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <h1>📱 Live Human Activity Recognition</h1>
+
+    <p>
+        Start the sensors and move your phone.
+    </p>
+
+
+    <!-- START BUTTON -->
+
+    <button
+        id="startButton"
+        type="button"
+    >
+        🟢 Start Sensors
+    </button>
+
+
+    <!-- SENSOR STATUS -->
+
+    <div
+        class="status"
+        id="status"
+    >
+        Sensors not started
+    </div>
+
+
+    <!-- ACCELEROMETER -->
+
+    <div class="sensor-box">
+
+        <h2>📈 Accelerometer</h2>
+
+        <div class="value">
+            X:
+            <span id="accX">--</span>
+        </div>
+
+        <div class="value">
+            Y:
+            <span id="accY">--</span>
+        </div>
+
+        <div class="value">
+            Z:
+            <span id="accZ">--</span>
+        </div>
+
+    </div>
+
+
+    <!-- GYROSCOPE -->
+
+    <div class="sensor-box">
+
+        <h2>🔄 Gyroscope</h2>
+
+        <div class="value">
+            X:
+            <span id="gyroX">--</span>
+        </div>
+
+        <div class="value">
+            Y:
+            <span id="gyroY">--</span>
+        </div>
+
+        <div class="value">
+            Z:
+            <span id="gyroZ">--</span>
+        </div>
+
+    </div>
+
+
+    <!-- EVENT COUNTER -->
+
+    <div class="counter">
+
+        Motion Events Received:
+
+        <strong id="eventCount">
+            0
+        </strong>
+
+    </div>
+
+
+    <!-- DEBUG -->
+
+    <div class="debug">
+
+        <div>
+
+            Secure Context:
+
+            <span id="secureStatus">
+                checking...
+            </span>
+
+        </div>
+
+        <br>
+
+        <div>
+
+            DeviceMotion Supported:
+
+            <span id="motionSupported">
+                checking...
+            </span>
+
+        </div>
+
+        <br>
+
+        <div>
+
+            Last Sensor Data:
+
+        </div>
+
+        <pre id="debugData">No data yet</pre>
+
+    </div>
+
+
+    <!-- HAR DASHBOARD -->
+
+    <div class="sensor-box">
+
+        <h2>🤖 HAR Prediction</h2>
+
+        <div class="dashboard-value">
+
+            Current Activity:
+
+            <strong id="currentActivity">
+                Waiting...
+            </strong>
+
+        </div>
+
+        <div class="dashboard-value">
+
+            Sensor Buffer:
+
+            <strong id="bufferSize">
+                0 / 128
+            </strong>
+
+        </div>
+
+        <div class="dashboard-value">
+
+            Predictions:
+
+            <strong id="predictionCount">
+                0
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACTIVITY SEQUENCE -->
+
+    <div class="sensor-box">
+
+        <h2>📊 Activity Sequence</h2>
+
+        <div
+            id="activitySequence"
+            class="activity-sequence"
+        >
+            No activity predictions yet.
+        </div>
+
+    </div>
+
+
+    <!-- LLM ANALYSIS -->
+
+    <div class="sensor-box">
+
+        <h2>🧠 LLM Activity Analysis</h2>
+
+        <div
+            id="llmStatus"
+            class="llm-status"
+        >
+            Waiting for 10 activity changes...
+        </div>
+
+        <div
+            id="llmResult"
+            class="llm-result"
+        >
+            LLM analysis will appear here.
+        </div>
+
+    </div>
+
+
+    <script>
+
+
+        // =========================================
+        // VARIABLES
+        // =========================================
+
+        let sensorStarted = false;
+
+        let eventCount = 0;
+
+        let sendInterval = null;
+
+
+        let latestSensorData = {
+
+            accelerometer: {
+
+                x: null,
+                y: null,
+                z: null
+
+            },
+
+            gyroscope: {
+
+                x: null,
+                y: null,
+                z: null
+
+            }
+
+        };
+
+
+        // =========================================
+        // BROWSER SUPPORT
+        // =========================================
+
+        document.getElementById(
+            "secureStatus"
+        ).textContent =
+
+            window.isSecureContext
+                ? "YES"
+                : "NO";
+
+
+        document.getElementById(
+            "motionSupported"
+        ).textContent =
+
+            ("DeviceMotionEvent" in window)
+                ? "YES"
+                : "NO";
+
+
+        // =========================================
+        // HANDLE DEVICE MOTION
+        // =========================================
+
+        function handleMotion(event) {
+
+            eventCount++;
+
+
+            document.getElementById(
+                "eventCount"
+            ).textContent = eventCount;
+
+
+            // =====================================
+            // ACCELERATION
+            // =====================================
+
+            const acceleration =
+                event.acceleration;
+
+
+            // =====================================
+            // GYROSCOPE
+            // =====================================
+
+            const rotationRate =
+                event.rotationRate;
+
+
+            // =====================================
+            // CHECK ACCELERATION
+            // =====================================
+
+            if (!acceleration) {
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "❌ Acceleration data unavailable";
+
+                return;
+            }
+
+
+            // =====================================
+            // ACCELEROMETER
+            // =====================================
+
+            if (acceleration.x !== null) {
+
+                latestSensorData.accelerometer.x =
+                    acceleration.x;
+
+            }
+
+
+            if (acceleration.y !== null) {
+
+                latestSensorData.accelerometer.y =
+                    acceleration.y;
+
+            }
+
+
+            if (acceleration.z !== null) {
+
+                latestSensorData.accelerometer.z =
+                    acceleration.z;
+
+            }
+
+
+            // =====================================
+            // DISPLAY ACCELEROMETER
+            // =====================================
+
+            document.getElementById(
+                "accX"
+            ).textContent =
+
+                acceleration.x !== null
+                    ? acceleration.x.toFixed(3)
+                    : "NULL";
+
+
+            document.getElementById(
+                "accY"
+            ).textContent =
+
+                acceleration.y !== null
+                    ? acceleration.y.toFixed(3)
+                    : "NULL";
+
+
+            document.getElementById(
+                "accZ"
+            ).textContent =
+
+                acceleration.z !== null
+                    ? acceleration.z.toFixed(3)
+                    : "NULL";
+
+
+            // =====================================
+            // GYROSCOPE
+            // =====================================
+
+            if (rotationRate) {
+
+
+                // Browser gives
+                // degrees per second.
+                //
+                // Convert to radians per second.
+
+                if (rotationRate.alpha !== null) {
+
+                    latestSensorData.gyroscope.x =
+                        rotationRate.alpha *
+                        Math.PI / 180;
+
+                }
+
+
+                if (rotationRate.beta !== null) {
+
+                    latestSensorData.gyroscope.y =
+                        rotationRate.beta *
+                        Math.PI / 180;
+
+                }
+
+
+                if (rotationRate.gamma !== null) {
+
+                    latestSensorData.gyroscope.z =
+                        rotationRate.gamma *
+                        Math.PI / 180;
+
+                }
+
+
+                // =================================
+                // DISPLAY GYROSCOPE
+                // =================================
+
+                document.getElementById(
+                    "gyroX"
+                ).textContent =
+
+                    latestSensorData.gyroscope.x !== null
+                        ? latestSensorData.gyroscope.x.toFixed(3)
+                        : "NULL";
+
+
+                document.getElementById(
+                    "gyroY"
+                ).textContent =
+
+                    latestSensorData.gyroscope.y !== null
+                        ? latestSensorData.gyroscope.y.toFixed(3)
+                        : "NULL";
+
+
+                document.getElementById(
+                    "gyroZ"
+                ).textContent =
+
+                    latestSensorData.gyroscope.z !== null
+                        ? latestSensorData.gyroscope.z.toFixed(3)
+                        : "NULL";
+
+            }
+
+
+            // =====================================
+            // STATUS
+            // =====================================
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                "✅ LIVE SENSOR DATA RECEIVED";
+
+
+            // =====================================
+            // DEBUG
+            // =====================================
+
+            document.getElementById(
+                "debugData"
+            ).textContent =
+
+                JSON.stringify(
+                    latestSensorData,
+                    null,
+                    2
+                );
+
+        }
+
+
+        // =========================================
+        // SEND SENSOR DATA TO FLASK
+        // =========================================
+
+        async function sendSensorData() {
+
+            try {
+
+
+                // =================================
+                // CHECK VALUES
+                // =================================
+
+                if (
+
+                    latestSensorData.accelerometer.x === null ||
+
+                    latestSensorData.accelerometer.y === null ||
+
+                    latestSensorData.accelerometer.z === null ||
+
+                    latestSensorData.gyroscope.x === null ||
+
+                    latestSensorData.gyroscope.y === null ||
+
+                    latestSensorData.gyroscope.z === null
+
+                ) {
+
+                    return;
+
+                }
+
+
+                // =================================
+                // SEND POST REQUEST
+                // =================================
+
+                const response = await fetch(
+
+                    "/sensor",
+
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body: JSON.stringify(
+                            latestSensorData
+                        )
+
+                    }
+
+                );
+
+
+                const result =
+                    await response.json();
+
+
+                console.log(
+                    "Flask sensor response:",
+                    result
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Could not send sensor data:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =========================================
+        // START SENSORS
+        // =========================================
+
+        async function startSensors() {
+
+            if (sensorStarted) {
+
+                return;
+
+            }
+
+
+            try {
+
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "⏳ Requesting sensor permission...";
+
+
+                // =====================================
+                // IOS PERMISSION
+                // =====================================
+
+                if (
+
+                    typeof DeviceMotionEvent !==
+                        "undefined" &&
+
+                    typeof DeviceMotionEvent
+                        .requestPermission ===
+                        "function"
+
+                ) {
+
+
+                    const permission =
+
+                        await DeviceMotionEvent
+                            .requestPermission();
+
+
+                    if (
+                        permission !== "granted"
+                    ) {
+
+                        document.getElementById(
+                            "status"
+                        ).textContent =
+                            "❌ Motion permission denied";
+
+                        return;
+
+                    }
+
+                }
+
+
+                // =====================================
+                // REGISTER SENSOR LISTENER
+                // =====================================
+
+                window.addEventListener(
+
+                    "devicemotion",
+
+                    handleMotion,
+
+                    true
+
+                );
+
+
+                sensorStarted = true;
+
+
+                // =====================================
+                // UPDATE BUTTON
+                // =====================================
+
+                document.getElementById(
+                    "startButton"
+                ).disabled = true;
+
+
+                document.getElementById(
+                    "startButton"
+                ).textContent =
+                    "✅ Sensors Running";
+
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "✅ Sensors started. Move your phone.";
+
+
+                // =====================================
+                // SEND EVERY 500ms
+                // =====================================
+
+                sendInterval = setInterval(
+
+                    sendSensorData,
+
+                    500
+
+                );
+
+
+                console.log(
+                    "Sensor listener successfully registered."
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "SENSOR START ERROR:",
+                    error
+                );
+
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+
+                    "❌ Error starting sensors: " +
+                    error.message;
+
+            }
+
+        }
+
+
+        // =========================================
+        // START BUTTON
+        // =========================================
+
+        document.getElementById(
+            "startButton"
+        ).addEventListener(
+
+            "click",
+
+            startSensors
+
+        );
+
+
+        // =========================================
+        // UPDATE DASHBOARD
+        // =========================================
+
+        async function updateDashboard() {
+
+            try {
+
+
+                const response = await fetch(
+                    "/api/activity"
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                // =====================================
+                // CURRENT ACTIVITY
+                // =====================================
+
+                document.getElementById(
+                    "currentActivity"
+                ).textContent =
+
+                    data.current_activity;
+
+
+                // =====================================
+                // BUFFER
+                // =====================================
+
+                document.getElementById(
+                    "bufferSize"
+                ).textContent =
+
+                    data.buffer_size +
+                    " / " +
+                    data.required_samples;
+
+
+                // =====================================
+                // PREDICTIONS
+                // =====================================
+
+                document.getElementById(
+                    "predictionCount"
+                ).textContent =
+
+                    data.prediction_count;
+
+
+                // =====================================
+                // ACTIVITY SEQUENCE
+                // =====================================
+
+                const sequence =
+                    data.live_sequence || [];
+
+
+                if (sequence.length === 0) {
+
+                    document.getElementById(
+                        "activitySequence"
+                    ).textContent =
+                        "No activity predictions yet.";
+
+                }
+
+                else {
+
+                    document.getElementById(
+                        "activitySequence"
+                    ).textContent =
+
+                        sequence.join(" → ");
+
+                }
+
+
+                // =====================================
+                // LLM STATUS
+                // =====================================
+
+                const llmResult =
+                    data.llm_interpretation || "";
+
+
+                if (data.llm_running) {
+
+                    document.getElementById(
+                        "llmStatus"
+                    ).textContent =
+                        "⏳ LLM is analyzing the activity sequence...";
+
+                }
+
+
+                else if (
+
+                    !llmResult ||
+
+                    llmResult.includes(
+                        "will appear after"
+                    )
+
+                ) {
+
+                    document.getElementById(
+                        "llmStatus"
+                    ).textContent =
+                        "Waiting for 10 activity changes...";
+
+                }
+
+
+                else if (
+
+                    llmResult.includes(
+                        "LLM analysis failed"
+                    )
+
+                ) {
+
+                    document.getElementById(
+                        "llmStatus"
+                    ).textContent =
+                        "❌ LLM analysis failed";
+
+                }
+
+
+                else {
+
+                    document.getElementById(
+                        "llmStatus"
+                    ).textContent =
+                        "✅ LLM analysis available";
+
+                }
+
+
+                // =====================================
+                // LLM RESULT
+                // =====================================
+
+                document.getElementById(
+                    "llmResult"
+                ).textContent =
+
+                    llmResult ||
+
+                    "LLM analysis will appear here.";
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Dashboard update failed:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =========================================
+        // UPDATE EVERY SECOND
+        // =========================================
+
+        setInterval(
+
+            updateDashboard,
+
+            1000
+
+        );
+
+
+        // =========================================
+        // INITIAL UPDATE
+        // =========================================
+
+        updateDashboard();
+
+
+    </script>
+
+</body>
+
+</html>

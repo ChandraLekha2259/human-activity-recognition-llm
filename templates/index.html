@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Human Activity Recognition using LLM</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #0f172a;
+
+            color: white;
+
+        }
+
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        header {
+
+            padding: 25px;
+
+            text-align: center;
+
+            background: #111827;
+
+            border-bottom:
+                1px solid #374151;
+
+        }
+
+
+        header h1 {
+
+            margin: 0;
+
+            font-size: 32px;
+
+        }
+
+
+        header p {
+
+            margin-top: 10px;
+
+            color: #9ca3af;
+
+            font-size: 16px;
+
+        }
+
+
+        /* =========================================
+           MAIN CONTAINER
+        ========================================= */
+
+        .container {
+
+            max-width: 1200px;
+
+            margin: auto;
+
+            padding: 25px;
+
+        }
+
+
+        /* =========================================
+           GRID
+        ========================================= */
+
+        .grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
+
+            gap: 20px;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        /* =========================================
+           CARDS
+        ========================================= */
+
+        .card {
+
+            background: #1e293b;
+
+            border-radius: 15px;
+
+            padding: 22px;
+
+            border:
+                1px solid #334155;
+
+            box-shadow:
+                0 4px 12px
+                rgba(0, 0, 0, 0.2);
+
+        }
+
+
+        .card h2 {
+
+            margin-top: 0;
+
+            font-size: 18px;
+
+            color: #cbd5e1;
+
+        }
+
+
+        /* =========================================
+           CURRENT ACTIVITY
+        ========================================= */
+
+        .current-activity {
+
+            text-align: center;
+
+            padding: 35px;
+
+        }
+
+
+        .activity-value {
+
+            font-size: 36px;
+
+            font-weight: bold;
+
+            margin-top: 15px;
+
+            color: #22c55e;
+
+        }
+
+
+        .activity-label {
+
+            color: #94a3b8;
+
+        }
+
+
+        /* =========================================
+           STAT VALUE
+        ========================================= */
+
+        .stat-value {
+
+            font-size: 28px;
+
+            font-weight: bold;
+
+            margin-top: 10px;
+
+        }
+
+
+        .stat-description {
+
+            color: #94a3b8;
+
+            margin-top: 8px;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =========================================
+           STATUS
+        ========================================= */
+
+        .status {
+
+            display: inline-block;
+
+            padding: 8px 14px;
+
+            border-radius: 20px;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            background: #374151;
+
+            color: #facc15;
+
+        }
+
+
+        .status.running {
+
+            background: #713f12;
+
+            color: #fde047;
+
+        }
+
+
+        .status.complete {
+
+            background: #14532d;
+
+            color: #86efac;
+
+        }
+
+
+        /* =========================================
+           SEQUENCE
+        ========================================= */
+
+        .sequence {
+
+            background: #020617;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            min-height: 80px;
+
+            line-height: 2;
+
+            word-break: break-word;
+
+            color: #e2e8f0;
+
+        }
+
+
+        .sequence-item {
+
+            display: inline-block;
+
+            background: #334155;
+
+            padding:
+                6px 12px;
+
+            margin: 4px;
+
+            border-radius: 8px;
+
+            font-size: 14px;
+
+        }
+
+
+        .arrow {
+
+            color: #60a5fa;
+
+            margin: 0 3px;
+
+        }
+
+
+        /* =========================================
+           LLM
+        ========================================= */
+
+        .llm-card {
+
+            margin-top: 25px;
+
+        }
+
+
+        .llm-header {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+        .llm-result {
+
+            margin-top: 20px;
+
+            background: #020617;
+
+            padding: 25px;
+
+            border-radius: 10px;
+
+            white-space: pre-wrap;
+
+            line-height: 1.7;
+
+            color: #e2e8f0;
+
+            min-height: 150px;
+
+        }
+
+
+        /* =========================================
+           INFO
+        ========================================= */
+
+        .info-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
+
+            gap: 15px;
+
+        }
+
+
+        .info-box {
+
+            background: #0f172a;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+        }
+
+
+        .info-title {
+
+            color: #94a3b8;
+
+            font-size: 13px;
+
+        }
+
+
+        .info-value {
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            margin-top: 5px;
+
+        }
+
+
+        /* =========================================
+           FOOTER
+        ========================================= */
+
+        footer {
+
+            text-align: center;
+
+            padding: 25px;
+
+            color: #64748b;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (max-width: 600px) {
+
+            header h1 {
+
+                font-size: 24px;
+
+            }
+
+
+            .activity-value {
+
+                font-size: 26px;
+
+            }
+
+
+            .container {
+
+                padding: 15px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================
+         HEADER
+    ========================================= -->
+
+    <header>
+
+        <h1>
+            🤖 Human Activity Recognition using LLM
+        </h1>
+
+        <p>
+            Real-Time Sensor Based Activity Detection
+            and LLM-Powered Activity Analysis
+        </p>
+
+    </header>
+
+
+    <!-- =========================================
+         MAIN
+    ========================================= -->
+
+    <div class="container">
+
+
+        <!-- =====================================
+             CURRENT ACTIVITY
+        ====================================== -->
+
+        <div class="card current-activity">
+
+            <div class="activity-label">
+                CURRENT ACTIVITY
+            </div>
+
+            <div
+                id="currentActivity"
+                class="activity-value"
+            >
+                Waiting...
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+             STATISTICS
+        ====================================== -->
+
+        <div class="grid">
+
+
+            <!-- SENSOR BUFFER -->
+
+            <div class="card">
+
+                <h2>
+                    📡 Sensor Buffer
+                </h2>
+
+                <div
+                    id="bufferSize"
+                    class="stat-value"
+                >
+                    0 / 128
+                </div>
+
+                <div class="stat-description">
+                    Samples collected for prediction
+                </div>
+
+            </div>
+
+
+            <!-- PREDICTIONS -->
+
+            <div class="card">
+
+                <h2>
+                    🎯 Predictions
+                </h2>
+
+                <div
+                    id="predictionCount"
+                    class="stat-value"
+                >
+                    0
+                </div>
+
+                <div class="stat-description">
+                    Random Forest predictions
+                </div>
+
+            </div>
+
+
+            <!-- ACCURACY -->
+
+            <div class="card">
+
+                <h2>
+                    📊 Model Accuracy
+                </h2>
+
+                <div
+                    id="accuracy"
+                    class="stat-value"
+                >
+                    82.08%
+                </div>
+
+                <div class="stat-description">
+                    Random Forest model
+                </div>
+
+            </div>
+
+
+            <!-- FEATURES -->
+
+            <div class="card">
+
+                <h2>
+                    ⚙️ Features
+                </h2>
+
+                <div
+                    id="features"
+                    class="stat-value"
+                >
+                    30
+                </div>
+
+                <div class="stat-description">
+                    Features extracted from sensors
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+             ACTIVITY SEQUENCE
+        ====================================== -->
+
+        <div class="card">
+
+            <h2>
+                📈 Live Activity Sequence
+            </h2>
+
+            <div
+                id="activitySequence"
+                class="sequence"
+            >
+
+                Waiting for predictions...
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+             SYSTEM INFORMATION
+        ====================================== -->
+
+        <div class="card">
+
+            <h2>
+                ⚙️ System Information
+            </h2>
+
+
+            <div class="info-grid">
+
+
+                <div class="info-box">
+
+                    <div class="info-title">
+                        Sensor Window
+                    </div>
+
+                    <div
+                        id="windowSize"
+                        class="info-value"
+                    >
+                        128
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="info-title">
+                        ML Model
+                    </div>
+
+                    <div class="info-value">
+                        Random Forest
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="info-title">
+                        LLM
+                    </div>
+
+                    <div class="info-value">
+                        Llama 3.2 3B
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="info-title">
+                        Sensor Inputs
+                    </div>
+
+                    <div class="info-value">
+                        6
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+             LLM ANALYSIS
+        ====================================== -->
+
+        <div class="card llm-card">
+
+
+            <div class="llm-header">
+
+                <h2>
+                    🧠 LLM Activity Analysis
+                </h2>
+
+
+                <div
+                    id="llmStatus"
+                    class="status"
+                >
+                    Waiting
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="llmResult"
+                class="llm-result"
+            >
+
+LLM analysis will appear after
+10 activity changes.
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================
+         FOOTER
+    ========================================= -->
+
+    <footer>
+
+        Human Activity Recognition using
+        Machine Learning + LLM
+
+    </footer>
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================= -->
+
+    <script>
+
+
+        // =========================================
+        // UPDATE DASHBOARD
+        // =========================================
+
+        async function updateDashboard() {
+
+            try {
+
+
+                const response = await fetch(
+                    "/api/activity"
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                // =====================================
+                // CURRENT ACTIVITY
+                // =====================================
+
+                const currentActivity =
+                    document.getElementById(
+                        "currentActivity"
+                    );
+
+
+                currentActivity.textContent =
+                    data.current_activity;
+
+
+                // =====================================
+                // BUFFER
+                // =====================================
+
+                document.getElementById(
+                    "bufferSize"
+                ).textContent =
+
+                    data.buffer_size +
+                    " / " +
+                    data.required_samples;
+
+
+                // =====================================
+                // PREDICTIONS
+                // =====================================
+
+                document.getElementById(
+                    "predictionCount"
+                ).textContent =
+
+                    data.prediction_count;
+
+
+                // =====================================
+                // ACCURACY
+                // =====================================
+
+                document.getElementById(
+                    "accuracy"
+                ).textContent =
+
+                    data.accuracy +
+                    "%";
+
+
+                // =====================================
+                // FEATURES
+                // =====================================
+
+                document.getElementById(
+                    "features"
+                ).textContent =
+
+                    data.features;
+
+
+                // =====================================
+                // ACTIVITY SEQUENCE
+                // =====================================
+
+                const sequence =
+                    data.live_sequence || [];
+
+
+                const sequenceContainer =
+                    document.getElementById(
+                        "activitySequence"
+                    );
+
+
+                if (sequence.length === 0) {
+
+                    sequenceContainer.textContent =
+                        "Waiting for predictions...";
+
+                }
+
+                else {
+
+                    sequenceContainer.innerHTML = "";
+
+
+                    sequence.forEach(
+                        function(activity, index) {
+
+
+                            const item =
+                                document.createElement(
+                                    "span"
+                                );
+
+
+                            item.className =
+                                "sequence-item";
+
+
+                            item.textContent =
+                                activity;
+
+
+                            sequenceContainer.appendChild(
+                                item
+                            );
+
+
+                            if (
+                                index <
+                                sequence.length - 1
+                            ) {
+
+                                const arrow =
+                                    document.createElement(
+                                        "span"
+                                    );
+
+
+                                arrow.className =
+                                    "arrow";
+
+
+                                arrow.textContent =
+                                    " → ";
+
+
+                                sequenceContainer.appendChild(
+                                    arrow
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                // =====================================
+                // LLM STATUS
+                // =====================================
+
+                const llmStatus =
+                    document.getElementById(
+                        "llmStatus"
+                    );
+
+
+                if (data.llm_running) {
+
+                    llmStatus.textContent =
+                        "🧠 LLM ANALYZING";
+
+                    llmStatus.className =
+                        "status running";
+
+                }
+
+                else {
+
+                    llmStatus.textContent =
+                        "✅ ANALYSIS AVAILABLE";
+
+                    llmStatus.className =
+                        "status complete";
+
+                }
+
+
+                // =====================================
+                // LLM RESULT
+                // =====================================
+
+                document.getElementById(
+                    "llmResult"
+                ).textContent =
+
+                    data.llm_interpretation ||
+
+                    "LLM analysis will appear here.";
+
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Dashboard update failed:",
+                    error
+                );
+
+
+                document.getElementById(
+                    "llmStatus"
+                ).textContent =
+                    "Connection Error";
+
+            }
+
+        }
+
+
+        // =========================================
+        // UPDATE EVERY SECOND
+        // =========================================
+
+        setInterval(
+
+            updateDashboard,
+
+            1000
+
+        );
+
+
+        // =========================================
+        // INITIAL UPDATE
+        // =========================================
+
+        updateDashboard();
+
+
+    </script>
+
+
+</body>
+
+</html>
